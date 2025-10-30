@@ -21,7 +21,7 @@ class ReportView(discord.ui.View):
 
     def make_embed(self):
         embed = discord.Embed(
-            title="📋 Результат проверки отчёта",
+            title="📋 Результат проверки отчета",
             color=0x00b894,
             description=f"Осталось проверок: **{self.session.checks_remaining}**"
         )
@@ -44,7 +44,7 @@ class ReportView(discord.ui.View):
             self.page -= 1
             await self.update_message(interaction)
 
-    @discord.ui.button(label="⏭ Вперёд", style=discord.ButtonStyle.secondary, custom_id="next")
+    @discord.ui.button(label="⏭ Вперед", style=discord.ButtonStyle.secondary, custom_id="next")
     async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.page < self.total_pages - 1:
             self.page += 1
@@ -53,4 +53,4 @@ class ReportView(discord.ui.View):
     @discord.ui.button(label="🚫 Завершить сессию", style=discord.ButtonStyle.red, custom_id="finish")
     async def finish_session(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.session.active = False
-        await interaction.response.send_message("✅ Сессия завершена. Спасибо за работу!", ephemeral=True)
+        await interaction.response.send_message("✅ Сессия завершена!", ephemeral=True)
