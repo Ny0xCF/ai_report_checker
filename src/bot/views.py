@@ -39,18 +39,18 @@ class ReportView(discord.ui.View):
         await interaction.response.edit_message(embed=self.make_embed(), view=self)
 
     @discord.ui.button(label="⏮ Назад", style=discord.ButtonStyle.secondary, custom_id="prev")
-    async def prev_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def prev_page(self, interaction: discord.Interaction):
         if self.page > 0:
             self.page -= 1
             await self.update_message(interaction)
 
     @discord.ui.button(label="⏭ Вперед", style=discord.ButtonStyle.secondary, custom_id="next")
-    async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def next_page(self, interaction: discord.Interaction):
         if self.page < self.total_pages - 1:
             self.page += 1
             await self.update_message(interaction)
 
     @discord.ui.button(label="🚫 Завершить сессию", style=discord.ButtonStyle.red, custom_id="finish")
-    async def finish_session(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def finish_session(self, interaction: discord.Interaction):
         self.session.active = False
         await interaction.response.send_message("✅ Сессия завершена!", ephemeral=True)
