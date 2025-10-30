@@ -4,14 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="09202ca1-8ac7-456c-b11d-eb25c662cfe0" name="Changes" comment="ai_client.py init">
-      <change afterPath="$PROJECT_DIR$/.idea/ReportHelper.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/bot/utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bot/.env" beforeDir="false" afterPath="$PROJECT_DIR$/src/.env" afterDir="false" />
+    <list default="true" id="09202ca1-8ac7-456c-b11d-eb25c662cfe0" name="Changes" comment="ai_client.py refactoring">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/bot/ai_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/bot/ai_client.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prompts/arrest_report.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/prompts/arrest_report.txt" afterDir="false" />
     </list>
@@ -160,7 +154,7 @@
       <workItem from="1761671153364" duration="400000" />
       <workItem from="1761687815350" duration="4982000" />
       <workItem from="1761764632370" duration="8515000" />
-      <workItem from="1761842556378" duration="1439000" />
+      <workItem from="1761842556378" duration="3671000" />
     </task>
     <task id="LOCAL-00001" summary="ai_client.py init">
       <option name="closed" value="true" />
@@ -170,7 +164,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761773183059</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="ai_client.py refactoring">
+      <option name="closed" value="true" />
+      <created>1761844018973</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1761844018973</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -189,11 +191,12 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="ai_client.py init" />
-    <option name="LAST_COMMIT_MESSAGE" value="ai_client.py init" />
+    <MESSAGE value="ai_client.py refactoring" />
+    <option name="LAST_COMMIT_MESSAGE" value="ai_client.py refactoring" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/ReportHelper$ai_client.coverage" NAME="ai_client Coverage Results" MODIFIED="1761773020581" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/bot" />
-    <SUITE FILE_PATH="coverage/ReportHelper$main__1_.coverage" NAME="main (1) Coverage Results" MODIFIED="1761843866433" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/ReportHelper$main__1_.coverage" NAME="main (1) Coverage Results" MODIFIED="1761846053774" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/ReportHelper$main.coverage" NAME="main Coverage Results" MODIFIED="1761692685824" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/bot" />
   </component>
 </project>
