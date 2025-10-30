@@ -1,16 +1,18 @@
 import io
-import logging
+import os
+from pathlib import Path
+
 import discord
 from discord.ext import commands
 
-from src.bot.views import ReportView
-from src.bot.sessions import UserSession
 from src.bot.ai_client import AIClient
-from pathlib import Path
+from src.bot.sessions import UserSession
+from src.bot.views import ReportView
+from src.utils import logger
 
-logger = logging.getLogger("report-bot")
+logger = logger.get_logger("Handlers")
 
-START_CHANNEL_NAME = "проверка-отчетов"
+START_CHANNEL_NAME = os.getenv("START_CHANNEL_NAME")
 sessions = {}
 
 base_dir = Path(__file__).resolve().parent.parent

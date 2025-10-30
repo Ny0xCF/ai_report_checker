@@ -1,6 +1,7 @@
 import json
 import re
 
+
 def extract_json(raw_text: str) -> dict:
     """Извлекает JSON-объект из текста, даже если вокруг есть текст"""
     match = re.search(r"\{.*}", raw_text, re.DOTALL)

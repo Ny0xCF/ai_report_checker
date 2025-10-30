@@ -1,8 +1,10 @@
+import os
 from dataclasses import dataclass
 from typing import Optional, List
+
 from src.bot.ai_client import ReportCheckResult
 
-MAX_CHECKS = 5
+MAX_CHECKS = int(os.getenv("MAX_CHECKS"))
 
 
 @dataclass

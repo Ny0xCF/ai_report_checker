@@ -1,6 +1,7 @@
 import discord
-from src.bot.sessions import UserSession
+
 from src.bot.ai_client import ReportCheckResult
+from src.bot.sessions import UserSession
 
 
 class ReportView(discord.ui.View):

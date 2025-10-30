@@ -1,15 +1,14 @@
 import asyncio
-import logging
-from dataclasses import dataclass
-from typing import List, Optional
-from pathlib import Path
 import os
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Optional
 
 import openai
 from dotenv import load_dotenv
 
-from src.utils import utils
 from src.utils import logger
+from src.utils import utils
 
 logger = logger.get_logger("AIClient")
 
