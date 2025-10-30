@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 import os
 
@@ -32,10 +32,10 @@ class AIClient:
     -------------
     Роль:
     Ты - внутренний редактор тел полицейских отчетов для ролевой игры
-    
+
     Задача:
     Выполнять предварительную проверку тела отчета по заданному чек-листу и предлагать улучшения и исправленный вариант
-    
+
     Основные принципы проверки
     ---------------------------
     - Используй русский язык (если не указано иное)
@@ -51,7 +51,8 @@ class AIClient:
     - Все временные отметки, номера ордеров, патрулей, улицы, имена и данные сохраняются без изменений
     - Рекомендации в блоке с исправленной версии отчета вставляй через скобки [], не надо заполнять их выдуманными данными
     - Не придумывай рекомендации, которых нет в критериях проверки
-    
+    - Нет гарантий, что тебе дадут на проверку именно отчет. Это может быть все что угодно. Если на вход подан не отчет - отдавай соответствующее сообщение об ошибке, но обязательно все так же по установленному формату
+
     Формат ответа
     -------------
     В ответе нужно предоставить два блока:
@@ -59,7 +60,7 @@ class AIClient:
     2. Исправленный вариант отчета - с учетом рекомендаций, без оформления и вымышленных данных
     
     В ответе отдавай результат СТРОГО В ФОРМАТЕ JSON СО СЛЕДУЮЩЕЙ СТРУКТУРОЙ:
-    
+
     {
       "recommendations": [
         {
@@ -74,11 +75,6 @@ class AIClient:
       "corrected_report": "Исправленный текст отчета с учетом рекомендаций.
       Для мест, которые требуют уточнения или корректировки, используй скобки [ ] без выдуманных данных"
     }
-    
-    - В массиве "recommendations" перечисляй только конкретные замечания по критериям проверки
-    - Все рекомендации и исправления должны строго соответствовать критериям проверки
-    - Поле "corrected_report" содержит готовый к исправлению отчет с вставленными скобками [ ] там, где требуется исправление или уточнение
-    - Не добавляй лишнего текста вне JSON
     """.strip()
 
     def __init__(
@@ -119,23 +115,26 @@ class AIClient:
             messages=messages,
         )
 
-    async def query(self, user_message: str) -> ReportCheckResult:
-        """Асинхронный запрос к модели с логированием"""
+    async def query(self, user_message: str, history: Optional[List[dict]] = None) -> ReportCheckResult:
+        """
+        Асинхронный запрос к модели с логированием и поддержкой контекста (истории диалога)
+        """
         async with self.semaphore:
             logger.debug(f"Отправка запроса к модели ({self.model_name})")
-            logger.debug(f"Сообщение из запрос: {user_message}")
+
+            # Формируем историю сообщений
+            messages = [{"role": "system", "content": self.role_prompt}]
+            if history:
+                messages.extend(history)
+            messages.append({"role": "user", "content": user_message})
+
+            logger.debug(f"Отправляется {len(messages)} сообщений в модель")
 
             try:
-                response = await asyncio.to_thread(
-                    self._sync_query,
-                    [
-                        {"role": "system", "content": self.role_prompt},
-                        {"role": "user", "content": user_message},
-                    ],
-                )
+                response = await asyncio.to_thread(self._sync_query, messages)
                 content = response.choices[0].message.content
                 logger.debug("Ответ от модели получен")
-                logger.debug(f"Сырой ответ из контента: {content}")
+                logger.debug(f"Сырой ответ: {content}")
 
                 data = utils.extract_json(content)
                 recommendations = [Recommendation(**r) for r in data.get("recommendations", [])]
