@@ -1,13 +1,17 @@
 import asyncio
+import logging
 from dataclasses import dataclass
 from typing import List
 from pathlib import Path
+import os
 
 import openai
 from dotenv import load_dotenv
-import os
 
-from src.bot import utils
+from src.utils import utils
+from src.utils import logger
+
+logger = logger.get_logger("AIClient")
 
 
 @dataclass
@@ -23,7 +27,6 @@ class ReportCheckResult:
 
 
 class AIClient:
-    #  Базовый системный промпт с инструкцией формата
     BASE_RULES_PROMPT = """
     Роль и задача
     -------------
@@ -85,7 +88,7 @@ class AIClient:
             model_name: str = "tngtech/deepseek-r1t2-chimera:free",
             max_concurrent: int = 10,
     ):
-        # Загрузка переменных окружения
+        # Загружаем токен
         load_dotenv(dotenv_path=env_path)
         api_key = os.getenv("OPENROUTER_TOKEN")
         if not api_key:
@@ -96,13 +99,18 @@ class AIClient:
             api_key=api_key,
         )
 
-        # Загружаем промт
+        # Загружаем промпт
         if not prompt_path.exists():
             raise FileNotFoundError(f"Файл промта не найден: {prompt_path}")
-        self.role_prompt = prompt_path.read_text(encoding="utf-8") + f"\n\n---\n\n{self.BASE_RULES_PROMPT}"
+        self.role_prompt = (
+                prompt_path.read_text(encoding="utf-8").strip()
+                + f"\n\n---\n\n{self.BASE_RULES_PROMPT}"
+        )
 
         self.model_name = model_name
         self.semaphore = asyncio.Semaphore(max_concurrent)
+
+        logger.info(f"AIClient инициализирован: модель={model_name}, max_concurrent={max_concurrent}")
 
     def _sync_query(self, messages: List[dict]):
         """Синхронный запрос к API OpenRouter"""
@@ -112,8 +120,11 @@ class AIClient:
         )
 
     async def query(self, user_message: str) -> ReportCheckResult:
-        """Асинхронный запрос к модели с автоматическим преобразованием в DTO"""
+        """Асинхронный запрос к модели с логированием"""
         async with self.semaphore:
+            logger.debug(f"Отправка запроса к модели ({self.model_name})")
+            logger.debug(f"Сообщение из запрос: {user_message}")
+
             try:
                 response = await asyncio.to_thread(
                     self._sync_query,
@@ -122,9 +133,14 @@ class AIClient:
                         {"role": "user", "content": user_message},
                     ],
                 )
-                data = utils.extract_json(response.choices[0].message.content)
+                content = response.choices[0].message.content
+                logger.debug("Ответ от модели получен")
+                logger.debug(f"Сырой ответ из контента: {content}")
+
+                data = utils.extract_json(content)
                 recommendations = [Recommendation(**r) for r in data.get("recommendations", [])]
                 corrected = data.get("corrected_report", "")
                 return ReportCheckResult(recommendations, corrected)
+
             except Exception as e:
                 raise RuntimeError(f"Не удалось выполнить запрос: {e}")
