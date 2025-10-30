@@ -1,79 +1,102 @@
-import os
 import asyncio
-import json
-import re
 from dataclasses import dataclass
 from typing import List
+from pathlib import Path
 
 import openai
 from dotenv import load_dotenv
+import os
 
-# ------------------- DTO -------------------
+from src.bot import utils
+
+
 @dataclass
 class Recommendation:
     criterion: str
     issues: List[str]
+
 
 @dataclass
 class ReportCheckResult:
     recommendations: List[Recommendation]
     corrected_report: str
 
-# ------------------- Настройка -------------------
-load_dotenv(dotenv_path="D:\\PyCharm\\ReportHelper\\src\\bot\\.env")
-OPENROUTER_TOKEN = os.getenv("OPENROUTER_TOKEN")
-if not OPENROUTER_TOKEN:
-    raise ValueError("OPENROUTER_TOKEN не найден в src/bot/.env")
 
-client = openai.OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_TOKEN
-)
+class AIClient:
+    #  Базовый системный промпт с инструкцией формата
+    BASE_INSTRUCTION = """
+    В ответе отдавай результат строго в формате JSON со следующей структурой:
+    
+    {
+      "recommendations": [
+        {
+          "criterion": "Название критерия проверки (например, Стиль изложения)",
+          "issues": [
+            "Конкретная проблема по этому критерию",
+            "Еще одна проблема"
+          ]
+        },
+        ...
+      ],
+      "corrected_report": "Исправленный текст отчета с учетом рекомендаций. 
+      Для мест, которые требуют уточнения или корректировки, используй скобки [ ] без выдуманных данных"
+    }
+    
+    Правила:
+    1. В массиве "recommendations" перечисляй только конкретные замечания по критериям проверки, указанных выше
+    2. Поле "corrected_report" содержит готовый к исправлению отчет с вставленными скобками [ ] там, 
+        где требуется исправление или уточнение
+    3. Не добавляй лишнего текста вне JSON
+    4. Все рекомендации и исправления должны строго соответствовать чек-листу и примерам выше
+    """.strip()
 
-with open("D:\\PyCharm\\ReportHelper\\src\\prompts\\arrest_report.txt", "r", encoding="utf-8") as f:
-    ROLE_PROMPT = f.read()
+    def __init__(
+            self,
+            env_path: Path,
+            prompt_path: Path,
+            model_name: str = "tngtech/deepseek-r1t2-chimera:free",
+            max_concurrent: int = 10,
+    ):
+        # Загрузка переменных окружения
+        load_dotenv(dotenv_path=env_path)
+        api_key = os.getenv("OPENROUTER_TOKEN")
+        if not api_key:
+            raise ValueError("OPENROUTER_TOKEN не найден в .env")
 
-MODEL_NAME = "tngtech/deepseek-r1t2-chimera:free"  # Модель OpenRouter.ai
+        self.client = openai.OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key,
+        )
 
-def extract_json(raw_text: str):
-    # ищем первый открывающий { и последний закрывающий }
-    match = re.search(r"\{.*}", raw_text, re.DOTALL)
-    if not match:
-        raise ValueError("Не удалось найти JSON в ответе ИИ")
-    json_str = match.group(0).replace("\n", "")
-    return json.loads(json_str)
+        # Загружаем промт
+        if not prompt_path.exists():
+            raise FileNotFoundError(f"Файл промта не найден: {prompt_path}")
+        self.role_prompt = prompt_path.read_text(encoding="utf-8") + f"\n\n---\n\n{self.BASE_INSTRUCTION}"
 
-# ------------------- Синхронная функция -------------------
-def sync_query(user_message: str):
-    return client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=[
-            {"role": "system", "content": ROLE_PROMPT},
-            {"role": "user", "content": user_message}
-        ]
-    )
+        self.model_name = model_name
+        self.semaphore = asyncio.Semaphore(max_concurrent)
 
-# ------------------- Семафор для ограничений -------------------
-semaphore = asyncio.Semaphore(5)  # максимум 5 одновременных запросов
+    def _sync_query(self, messages: List[dict]):
+        """Синхронный запрос к API OpenRouter"""
+        return self.client.chat.completions.create(
+            model=self.model_name,
+            messages=messages,
+        )
 
-# ------------------- Асинхронный клиент -------------------
-async def query_ai(user_message: str) -> ReportCheckResult:
-    async with semaphore:
-        try:
-            response = await asyncio.to_thread(sync_query, user_message)
-            # Преобразуем ответ ИИ из строки JSON в DTO
-            data = extract_json(response.choices[0].message.content)
-            recommendations = [Recommendation(**rec) for rec in data.get("recommendations", [])]
-            corrected_report = data.get("corrected_report", "")
-            return ReportCheckResult(recommendations=recommendations, corrected_report=corrected_report)
-        except Exception as e:
-            raise RuntimeError(f"Ошибка при запросе к OpenAI: {e}")
-
-# ------------------- Тестовый запуск -------------------
-async def main():
-    test_report = "В 16:00 20.07.2025 дежурными офицерами станции Мишен-Роу были услышаны хлопки схожие с выстрелами малокалиберного оружия в свеверо-восточной стороне от станции у сухих каналов. В ходе пешего прибытия на место выстрелов, офицерами был замечен подозреваемый, некий Рентон Шаннон и свидетельница неизвестная малолетняя девушка, в ходе проведения задержания и полевого расследования, офицеры обнаружили за пазухой шорт подозреваемого Рентона пистолет модели SR40 и шесть патронов 9 миллиметров."
-    result = await query_ai(test_report)
-    print(result)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    async def query(self, user_message: str) -> ReportCheckResult:
+        """Асинхронный запрос к модели с автоматическим преобразованием в DTO"""
+        async with self.semaphore:
+            try:
+                response = await asyncio.to_thread(
+                    self._sync_query,
+                    [
+                        {"role": "system", "content": self.role_prompt},
+                        {"role": "user", "content": user_message},
+                    ],
+                )
+                data = utils.extract_json(response.choices[0].message.content)
+                recommendations = [Recommendation(**r) for r in data.get("recommendations", [])]
+                corrected = data.get("corrected_report", "")
+                return ReportCheckResult(recommendations, corrected)
+            except Exception as e:
+                raise RuntimeError(f"Не удалось выполнить запрос: {e}")
