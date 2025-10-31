@@ -1,13 +1,25 @@
-name: Deploy AI Report Checker
+name: Test SSH to Server
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  deploy:
+  test-ssh:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Run test command on server
+        run: |
+          ssh -o StrictHostKeyChecking=no your_user@your.server.ip '
+            echo "GitHub Actions успешно подключились к серверу!"
+          '
