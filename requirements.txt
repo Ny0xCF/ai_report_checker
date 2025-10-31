@@ -10,3 +10,4 @@ yarl==1.9.2
 openai==1.32.0
 python-dotenv==1.0.1
 pydantic-core==2.41.4
+httpx~=0.28.1
