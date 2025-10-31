@@ -17,7 +17,7 @@ logging.basicConfig(
     format="[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
-        logging.StreamHandler(sys.stdout),  # Вывод в консоль
+        # logging.StreamHandler(sys.stdout),  # Вывод в консоль
         RotatingFileHandler(
             LOG_DIR / "bot.log",
             maxBytes=5 * 1024 * 1024,  # 5 MB
