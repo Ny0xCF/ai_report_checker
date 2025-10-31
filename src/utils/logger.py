@@ -1,31 +1,29 @@
 import logging
 import os
 import sys
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from dotenv import load_dotenv
+import dotenv
 
-load_dotenv()
+dotenv.load_dotenv()
 
-LOG_LEVEL = getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO)
+LOG_LEVEL = getattr(logging, os.getenv("LOG_LEVEL").upper(), logging.DEBUG)
 LOG_DIR = Path(__file__).resolve().parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
-LOG_FILE = LOG_DIR / "app.log"
-
-# Формат сообщений
-LOG_FORMAT = "[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s"
-DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-
-# ------------------- Конфигурация -------------------
-
 logging.basicConfig(
     level=LOG_LEVEL,
-    format=LOG_FORMAT,
-    datefmt=DATE_FORMAT,
+    format="[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
         logging.StreamHandler(sys.stdout),  # Вывод в консоль
-        logging.FileHandler(LOG_FILE, encoding="utf-8"),  # Запись в файл
+        RotatingFileHandler(
+            LOG_DIR / "bot.log",
+            maxBytes=5 * 1024 * 1024,  # 5 MB
+            backupCount=3,  # храним 3 файла максимум
+            encoding="utf-8"
+        ),  # Запись в файл
     ],
 )
 

@@ -12,7 +12,7 @@ from src.utils import logger
 
 logger = logger.get_logger("handlers")
 
-START_CHANNEL_NAME = os.getenv("START_CHANNEL_NAME")
+START_CHANNEL_NAME = os.getenv("START_CHANNEL_NAME", "проверка-отчетов")
 session_manager = SessionManager()
 
 base_dir = Path(__file__).resolve().parent.parent

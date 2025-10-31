@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
+import httpx
 import openai
 from dotenv import load_dotenv
 
@@ -92,6 +93,7 @@ class AIClient:
         self.client = openai.OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key,
+            http_client=httpx.Client()
         )
 
         # Загружаем промпт
