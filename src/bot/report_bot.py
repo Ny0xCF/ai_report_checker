@@ -4,7 +4,7 @@ from discord.ext import commands
 from src.bot.handlers import setup_start_message, handle_dm
 from src.utils import logger
 
-logger = logger.get_logger("Bot")
+logger = logger.get_logger("bot")
 
 intents = discord.Intents.default()
 intents.messages = True
