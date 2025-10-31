@@ -34,7 +34,7 @@ async def setup_start_message(bot: commands.Bot):
                 await msg.delete()
                 break
 
-        view = discord.ui.View()
+        view = discord.ui.View(timeout=None)
         start_button = discord.ui.Button(
             label="Начать проверку",
             style=discord.ButtonStyle.primary
