@@ -28,34 +28,61 @@ async def setup_start_message(bot: commands.Bot):
         if not channel:
             continue
 
+        # Удаляем старое сообщение с кнопкой (если есть)
         async for msg in channel.history(limit=20):
             if msg.author == bot.user:
                 await msg.delete()
                 break
 
         view = discord.ui.View()
-        start_button = discord.ui.Button(label="Начать проверку", style=discord.ButtonStyle.primary)
+        start_button = discord.ui.Button(
+            label="Начать проверку",
+            style=discord.ButtonStyle.primary
+        )
 
         async def start_callback(interaction: discord.Interaction):
             user = interaction.user
 
-            session = await session_manager.create_session(user.id, dm_channel=user)
-            if not session:
+            # 🔒 Проверка: есть ли уже активная сессия
+            existing_session = session_manager.get(user.id)
+            if existing_session and existing_session.active:
                 await interaction.response.send_message(
-                    "⚠️ Сейчас слишком много активных проверок от других пользователей. Попробуй позже",
+                    "⚠️ У тебя уже есть активная проверка. Проверь свои личные сообщения со мной!",
                     ephemeral=True
                 )
                 return
 
-            await interaction.response.send_message("Я написал тебе в ЛС - проверь сообщения", ephemeral=True)
-            await user.send(
-                "👋 Привет! Отправь сюда только тело отчета в виде **текста** или **.txt-файла**. "
-                "Обрати внимание, что текст должен быть без какого-либо оформления и кода\n\n"
-                
-                "⚠️ Учти, что я не совершенен и иногда могу давать неправильные рекомендации! "
-                "Обязательно перепроверь свой отчет еще раз перед публикацией"
-            )
-            logger.info(f"Создана новая сессия для {user.name}")
+            # Создаём новую сессию (если лимит не превышен)
+            session = await session_manager.create_session(user.id, dm_channel=user)
+            if not session:
+                await interaction.response.send_message(
+                    "⚠️ Сейчас слишком много активных проверок. Попробуй позже.",
+                    ephemeral=True
+                )
+                return
+
+            # ⚙️ Отправляем инструкцию только один раз
+            try:
+                await user.send(
+                    "👋 Привет! Отправь сюда только тело отчета в виде **текста** или **.txt-файла**. "
+                    "Обрати внимание, что текст должен быть без какого-либо оформления или кода\n\n"
+                    ""
+                    "⚠️ Я могу ошибаться, поэтому обязательно перепроверь рекомендации перед публикацией отчета!"
+                )
+                await interaction.response.send_message(
+                    "✅ Я написал тебе в ЛС — проверь сообщения!",
+                    ephemeral=True
+                )
+                logger.info(f"Создана новая сессия для {user.name}")
+            except discord.Forbidden:
+                # Если пользователь закрыл ЛС с ботом
+                await interaction.response.send_message(
+                    "❌ Я не могу написать тебе в личные сообщения. Разреши ЛС и попробуй снова",
+                    ephemeral=True
+                )
+                # Очищаем сессию, чтобы не занимала слот
+                session_manager.remove(user.id)
+                return
 
         start_button.callback = start_callback
         view.add_item(start_button)
@@ -82,6 +109,7 @@ async def setup_start_message(bot: commands.Bot):
             color=0x3498db
         )
         embed.set_image(url="https://i.ibb.co/MxKqyByh/Ai-Report-Helper.png")
+
         await channel.send(embed=embed, view=view)
 
 
