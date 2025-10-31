@@ -1,12 +1,15 @@
-name: Test SSH Connection
+name: Deploy AI Report Checker
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
 
 jobs:
-  ssh-test:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,7 +18,9 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-      - name: Run test command on server
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} \
-          'echo "GitHub Actions успешно подключились к серверу!"'
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run deployment script on server
+        run: ssh -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} \
+            'bash -s' < ./deploy.sh
