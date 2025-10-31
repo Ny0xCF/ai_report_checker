@@ -22,9 +22,9 @@ trap cleanup EXIT
 cd "$APP_DIR" || { echo "Папка приложения не найдена: $APP_DIR"; exit 1; }
 
 # Останавливаем приложение, если оно запущено
-if pgrep -f 'python -m src.main' > /dev/null; then
-    echo "Останавливаем текущее приложение..."
-    pkill -f 'python -m src.main' || { echo "Ошибка при остановке приложения"; exit 1; }
+if pgrep -f 'python3 -m src.main' > /dev/null; then
+    echo "Приложение было запущено, останавливаем..."
+    pkill -f 'python3 -m src.main' || echo "Не удалось остановить приложение, возможно оно уже завершилось"
 else
     echo "Приложение не запущено, продолжаем..."
 fi
@@ -38,8 +38,18 @@ git reset --hard origin/main || { echo "Ошибка при git reset"; exit 1; 
 echo "Устанавливаем зависимости..."
 pip install -r requirements.txt --upgrade || { echo "Ошибка при установке зависимостей"; exit 1; }
 
-# Запускаем приложение
+# Запускаем приложение в фоне и отвязываем от SSH
 echo "Запускаем приложение..."
-nohup python -m src.main &
+nohup python3 -m src.main > /dev/null 2>&1 &
+disown
+
+# Ждём 1 секунду, чтобы процесс стартовал
+sleep 1
+
+# Проверяем, запущен ли процесс
+if ! pgrep -f 'python3 -m src.main' > /dev/null; then
+    echo "Ошибка: приложение не запустилось!"
+    exit 1
+fi
 
 echo "===== Деплой завершен ====="
