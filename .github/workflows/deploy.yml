@@ -1,15 +1,12 @@
-name: Test SSH to Server
+name: Test SSH Connection
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
 
 jobs:
-  test-ssh:
+  ssh-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,6 +17,5 @@ jobs:
 
       - name: Run test command on server
         run: |
-          ssh -o StrictHostKeyChecking=no your_user@your.server.ip '
-            echo "GitHub Actions успешно подключились к серверу!"
-          '
+          ssh -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} \
+          'echo "GitHub Actions успешно подключились к серверу!"'
