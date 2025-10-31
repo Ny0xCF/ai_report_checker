@@ -43,8 +43,8 @@ echo "Запускаем приложение..."
 nohup python -m src.main > /dev/null 2>&1 &
 disown
 
-# Ждём 1 секунду, чтобы процесс стартовал
-sleep 1
+# Ждём 10 секунд, чтобы процесс стартовал
+sleep 10
 
 # Проверяем, запущен ли процесс
 if ! pgrep -f 'python -m src.main' > /dev/null; then
