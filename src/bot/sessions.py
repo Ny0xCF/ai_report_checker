@@ -7,8 +7,8 @@ import discord
 
 from src.bot.ai_client import ReportCheckResult
 
-MAX_CHECKS = int(os.getenv("MAX_CHECKS"))
-SESSION_TIMEOUT = int(os.getenv("SESSION_TIMEOUT"))
+MAX_CHECKS = int(os.getenv("MAX_CHECKS", "5"))
+SESSION_TIMEOUT = int(os.getenv("SESSION_TIMEOUT", "600"))
 
 
 @dataclass
