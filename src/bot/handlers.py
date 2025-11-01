@@ -22,7 +22,7 @@ client = AIClient(
     prompt_path=base_dir / "configs/arrest_report.txt",
 )
 
-config = Dynaconf(settings_files=["src/configs/ui.yaml"])
+ui_config = Dynaconf(settings_files=["src/configs/ui.yaml"])
 
 
 async def setup_start_message(bot: commands.Bot):
@@ -41,33 +41,18 @@ async def setup_start_message(bot: commands.Bot):
         view = discord.ui.View(timeout=None)
 
         start_button = discord.ui.Button(
-            label=config.message.initial.button.start.label,
+            label=ui_config.message.initial.button.start.label,
             style=discord.ButtonStyle.green,
         )
 
         help_button = discord.ui.Button(
-            label=config.message.initial.button.help.label,
+            label=ui_config.message.initial.button.help.label,
             style=discord.ButtonStyle.blurple,
         )
 
         # 📘 Обработчик нажатия на "Инструкцию"
         async def help_callback(interaction: discord.Interaction):
-            help_text = (
-                "📘 **Инструкция по использованию бота:**\n\n"
-                "1️⃣ Перейди в этот канал и нажми **«Начать проверку»**.\n"
-                "2️⃣ Бот напишет тебе в личные сообщения. Если не пришло — проверь, "
-                "что у тебя **разрешены ЛС от участников сервера**.\n"
-                "3️⃣ Отправь **текст отчёта** или **.txt файл** в чат с ботом.\n"
-                "4️⃣ Подожди, пока бот закончит анализ (он сообщит об этом).\n"
-                "5️⃣ В ответ ты получишь исправленную версию отчёта и рекомендации.\n\n"
-                "⚙️ **Советы:**\n"
-                "- Можно отправлять только один отчёт за раз.\n"
-                "- Проверка занимает от 10 до 60 секунд.\n"
-                "- После нескольких проверок сессия завершится автоматически.\n\n"
-                "💡 Если бот не отвечает или выдал ошибку — попробуй позже "
-                "или напиши <@337950212016439327> для помощи."
-            )
-            await interaction.response.send_message(help_text, ephemeral=True)
+            await interaction.response.send_message(ui_config.message.help.description.text, ephemeral=True)
 
         # ⚙️ Обработчик нажатия "Начать проверку"
         async def start_callback(interaction: discord.Interaction):
@@ -76,38 +61,26 @@ async def setup_start_message(bot: commands.Bot):
             # Проверяем, есть ли уже активная сессия
             existing_session = session_manager.get(user.id)
             if existing_session and existing_session.active:
-                await interaction.response.send_message(
-                    "⚠️ У тебя уже есть активная проверка. Проверь свои личные сообщения со мной!",
-                    ephemeral=True
-                )
+                await interaction.response.send_message(ui_config.message.err_already_started, ephemeral=True)
                 return
 
             # Создаём новую сессию
             session = await session_manager.create_session(user.id, dm_channel=user)
             if not session:
                 await interaction.response.send_message(
-                    "⚠️ Сейчас слишком много активных проверок. Попробуй позже.",
+                    ui_config.message.err_too_many_clients.description.text,
                     ephemeral=True
                 )
                 return
 
             # Пишем пользователю в ЛС
             try:
-                await user.send(
-                    "👋 Привет! Отправь сюда только тело отчета в виде **текста** или **.txt-файла**. "
-                    "Обрати внимание, что текст должен быть без какого-либо оформления или кода\n\n"
-                    "⚠️ Я могу ошибаться, поэтому обязательно перепроверь рекомендации перед публикацией отчета!"
-                )
-                await interaction.response.send_message(
-                    "✅ Я написал тебе в ЛС — проверь сообщения!",
-                    ephemeral=True
-                )
+                await user.send(ui_config.message.start.description.text)
+                await interaction.response.send_message(ui_config.message.start_notify.description.text, ephemeral=True)
                 logger.info(f"Создана новая сессия для {user.name}")
             except discord.Forbidden:
-                await interaction.response.send_message(
-                    "❌ Я не могу написать тебе в личные сообщения. Разреши ЛС и попробуй снова.",
-                    ephemeral=True
-                )
+                await interaction.response.send_message(ui_config.message.err_dm_closed.description.text,
+                                                        ephemeral=True)
                 session_manager.remove(user.id)
                 return
 
@@ -119,11 +92,11 @@ async def setup_start_message(bot: commands.Bot):
 
         # Основное embed-сообщение
         embed = discord.Embed(
-            title=config.message.initial.title.text,
-            description=config.message.initial.description.text,
-            color=config.message.initial.title.color
+            title=ui_config.message.initial.title.text,
+            description=ui_config.message.initial.description.text,
+            color=ui_config.message.initial.title.color
         )
-        embed.set_image(url=config.message.initial.image.url)
+        embed.set_image(url=ui_config.message.initial.image.url)
 
         await channel.send(embed=embed, view=view)
 
@@ -134,9 +107,7 @@ async def handle_dm(message: discord.Message):
 
     session = session_manager.get(message.author.id)
     if not session or not session.active:
-        await message.channel.send(
-            "⚠️ У тебя нет активной сессии. Перейди в канал с интерфейсом бота и нажми на кнопку."
-        )
+        await message.channel.send(ui_config.message.err_inactive_session.description.text)
         return
 
     # Сбрасываем таймер, если пользователь активен
@@ -145,26 +116,24 @@ async def handle_dm(message: discord.Message):
         session.reset_timeout()
 
     if session.processing:
-        await message.channel.send("⏳ Отчет уже отправлен. Подожди окончания текущей проверки.")
+        await message.channel.send(ui_config.message.err_pls_wait.description.text)
         return
 
     if message.attachments:
         file = message.attachments[0]
         if not file.filename.endswith(".txt"):
-            await message.channel.send("❌ Пришли файл в .txt формате.")
+            await message.channel.send(ui_config.message.err_wrong_format.description.text)
             return
         content = (await file.read()).decode("utf-8")
     else:
         content = message.content.strip()
 
     if not content:
-        await message.channel.send("⚠️ Не удалось прочитать отчет. Попробуй еще раз.")
+        await message.channel.send(ui_config.message.err_wrong_file_input.description.text)
         return
 
     session.processing = True
-    processing_msg = await message.channel.send(
-        "🤖 Я анализирую твой отчет. Мне потребуется некоторое время..."
-    )
+    processing_msg = await message.channel.send(ui_config.message.check_started.description.text)
 
     try:
         session.add_user_message(content)
@@ -174,7 +143,7 @@ async def handle_dm(message: discord.Message):
         session.checks_remaining -= 1
 
         file_bytes = io.BytesIO(result.corrected_report.encode("utf-8"))
-        discord_file = discord.File(file_bytes, filename="corrected_report.txt")
+        discord_file = discord.File(file_bytes, filename="report_example.txt")
 
         view = ReportView(result, session)
         embed = view.make_embed()
@@ -182,7 +151,7 @@ async def handle_dm(message: discord.Message):
 
     except Exception as e:
         logger.exception("Ошибка при проверке отчета")
-        await processing_msg.edit(content=f"❌ Ошибка при проверке: {e}")
+        await processing_msg.edit(content=f"{ui_config.message.err_exception.description.text} {e}")
     finally:
         session.processing = False
         if session.active and session.checks_remaining > 0:
@@ -194,7 +163,4 @@ async def handle_dm(message: discord.Message):
         if session.timeout_task and not session.timeout_task.done():
             session.timeout_task.cancel()
 
-        await message.channel.send(
-            "🚫 Лимит проверок исчерпан. Сессия завершена. "
-            "Перейди в канал и нажми на кнопку, чтобы начать новую."
-        )
+        await message.channel.send(ui_config.message.err_limit_reached.description.text)
