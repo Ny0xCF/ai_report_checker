@@ -1,0 +1,7 @@
+bot:
+  start_channel: "mra-предпроверка-отчетов"
+  max_checks: 10
+
+session:
+  max_active: 30
+  timeout: 600

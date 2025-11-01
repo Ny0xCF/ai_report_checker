@@ -1,5 +1,4 @@
 import io
-import os
 from pathlib import Path
 
 import discord
@@ -9,23 +8,22 @@ from src.bot.ai_client import AIClient
 from src.bot.sessions_manager import SessionManager
 from src.bot.views import ReportView
 from src.utils import logger
-from src.utils.config_loader import messages_config
+from src.utils.config_loader import messages_config, bot_config
 
 logger = logger.get_logger("handlers")
 
-START_CHANNEL_NAME = os.getenv("START_CHANNEL_NAME", "проверка-отчетов")
 session_manager = SessionManager()
 
 base_dir = Path(__file__).resolve().parent.parent
 client = AIClient(
     env_path=base_dir / ".env",
-    prompt_path=base_dir / "configs/arrest_report.txt",
+    prompt_path=base_dir / "prompts/arrest_report.txt",
 )
 
 
 async def setup_start_message(bot: commands.Bot):
     for guild in bot.guilds:
-        channel = discord.utils.get(guild.text_channels, name=START_CHANNEL_NAME)
+        channel = discord.utils.get(guild.text_channels, name=bot_config.bot.start_channel)
         if not channel:
             continue
 

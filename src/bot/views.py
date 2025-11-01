@@ -3,7 +3,6 @@ import logging
 
 import discord
 
-from src.bot import sessions
 from src.bot.ai_client import ReportCheckResult
 from src.bot.sessions import UserSession
 from src.utils.config_loader import messages_config
@@ -111,7 +110,7 @@ class ReportView(discord.ui.View):
 
     async def _session_timeout(self):
         try:
-            await asyncio.sleep(sessions.SESSION_TIMEOUT)
+            await asyncio.sleep(messages_config.session.timeout)
             if self.session.active and not self.session.processing:
                 # Только если сессия активна и сейчас нет проверки
                 await self._end_session(interaction=None, manual=False)
