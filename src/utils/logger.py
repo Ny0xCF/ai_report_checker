@@ -9,7 +9,7 @@ import dotenv
 dotenv.load_dotenv()
 
 LOG_LEVEL = getattr(logging, os.getenv("LOG_LEVEL").upper(), logging.DEBUG)
-LOG_DIR = Path(__file__).resolve().parent / "logs"
+LOG_DIR = Path(sys.path[0]).resolve().parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
 logging.basicConfig(

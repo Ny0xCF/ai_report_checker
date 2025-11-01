@@ -4,6 +4,7 @@ from pathlib import Path
 
 import discord
 from discord.ext import commands
+from dynaconf import Dynaconf
 
 from src.bot.ai_client import AIClient
 from src.bot.sessions_manager import SessionManager
@@ -18,8 +19,10 @@ session_manager = SessionManager()
 base_dir = Path(__file__).resolve().parent.parent
 client = AIClient(
     env_path=base_dir / ".env",
-    prompt_path=base_dir / "prompts/arrest_report.txt",
+    prompt_path=base_dir / "configs/arrest_report.txt",
 )
+
+config = Dynaconf(settings_files=["src/configs/ui.yaml"])
 
 
 async def setup_start_message(bot: commands.Bot):
@@ -38,13 +41,13 @@ async def setup_start_message(bot: commands.Bot):
         view = discord.ui.View(timeout=None)
 
         start_button = discord.ui.Button(
-            label="Начать проверку",
-            style=discord.ButtonStyle.primary,
+            label=config.message.initial.button.start.label,
+            style=discord.ButtonStyle.green,
         )
 
         help_button = discord.ui.Button(
-            label="Инструкция",
-            style=discord.ButtonStyle.secondary,
+            label=config.message.initial.button.help.label,
+            style=discord.ButtonStyle.blurple,
         )
 
         # 📘 Обработчик нажатия на "Инструкцию"
@@ -116,25 +119,11 @@ async def setup_start_message(bot: commands.Bot):
 
         # Основное embed-сообщение
         embed = discord.Embed(
-            title="Ассистент для проверки отчетов",
-            description=(
-                "👋 Я — бот, который использует ИИ для проверки отчетов. "
-                "Ты можешь использовать меня, чтобы выполнить самопроверку перед публикацией отчета. "
-                "Это поможет снизить количество вопросов как у твоего супервайзера, так и у ОВР.\n\n"
-
-                "⚠️ Учти, что я не совершенен и иногда могу давать неправильную оценку. "
-                "Воспринимай мои замечания как рекомендации, а не требования.\n"
-                "Пользуйся принципом **«доверяй, но проверяй»**.\n\n"
-
-                "ℹ️ Если ты столкнулся с ошибками, хочешь предложить улучшения или получить помощь — "
-                "напиши в ЛС <@337950212016439327>.\n\n"
-
-                "⬇️ Нажми **«Начать проверку»**, чтобы приступить, "
-                "или **«Инструкция 📘»**, чтобы узнать, как это работает."
-            ),
-            color=0x3498db
+            title=config.message.initial.title.text,
+            description=config.message.initial.description.text,
+            color=config.message.initial.title.color
         )
-        embed.set_image(url="https://i.ibb.co/MxKqyByh/Ai-Report-Helper.png")
+        embed.set_image(url=config.message.initial.image.url)
 
         await channel.send(embed=embed, view=view)
 
