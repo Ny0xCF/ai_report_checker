@@ -19,7 +19,7 @@ logging.basicConfig(
     handlers=[
         # logging.StreamHandler(sys.stdout),  # Вывод в консоль
         RotatingFileHandler(
-            LOG_DIR / "bot.log",
+            LOG_DIR / "app.log",
             maxBytes=5 * 1024 * 1024,  # 5 MB
             backupCount=3,  # храним 3 файла максимум
             encoding="utf-8"

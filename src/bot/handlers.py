@@ -4,12 +4,12 @@ from pathlib import Path
 
 import discord
 from discord.ext import commands
-from dynaconf import Dynaconf
 
 from src.bot.ai_client import AIClient
 from src.bot.sessions_manager import SessionManager
 from src.bot.views import ReportView
 from src.utils import logger
+from src.utils.config_loader import messages_config
 
 logger = logger.get_logger("handlers")
 
@@ -21,8 +21,6 @@ client = AIClient(
     env_path=base_dir / ".env",
     prompt_path=base_dir / "configs/arrest_report.txt",
 )
-
-ui_config = Dynaconf(settings_files=["src/configs/ui.yaml"])
 
 
 async def setup_start_message(bot: commands.Bot):
@@ -41,18 +39,18 @@ async def setup_start_message(bot: commands.Bot):
         view = discord.ui.View(timeout=None)
 
         start_button = discord.ui.Button(
-            label=ui_config.message.initial.button.start.label,
+            label=messages_config.message.initial.button.start.label,
             style=discord.ButtonStyle.green,
         )
 
         help_button = discord.ui.Button(
-            label=ui_config.message.initial.button.help.label,
+            label=messages_config.message.initial.button.help.label,
             style=discord.ButtonStyle.blurple,
         )
 
         # 📘 Обработчик нажатия на "Инструкцию"
         async def help_callback(interaction: discord.Interaction):
-            await interaction.response.send_message(ui_config.message.help.description.text, ephemeral=True)
+            await interaction.response.send_message(messages_config.message.help.description.text, ephemeral=True)
 
         # ⚙️ Обработчик нажатия "Начать проверку"
         async def start_callback(interaction: discord.Interaction):
@@ -61,25 +59,26 @@ async def setup_start_message(bot: commands.Bot):
             # Проверяем, есть ли уже активная сессия
             existing_session = session_manager.get(user.id)
             if existing_session and existing_session.active:
-                await interaction.response.send_message(ui_config.message.err_already_started, ephemeral=True)
+                await interaction.response.send_message(messages_config.message.err_already_started, ephemeral=True)
                 return
 
             # Создаём новую сессию
             session = await session_manager.create_session(user.id, dm_channel=user)
             if not session:
                 await interaction.response.send_message(
-                    ui_config.message.err_too_many_clients.description.text,
+                    messages_config.message.err_too_many_clients.description.text,
                     ephemeral=True
                 )
                 return
 
             # Пишем пользователю в ЛС
             try:
-                await user.send(ui_config.message.start.description.text)
-                await interaction.response.send_message(ui_config.message.start_notify.description.text, ephemeral=True)
+                await user.send(messages_config.message.start.description.text)
+                await interaction.response.send_message(messages_config.message.start_notify.description.text,
+                                                        ephemeral=True)
                 logger.info(f"Создана новая сессия для {user.name}")
             except discord.Forbidden:
-                await interaction.response.send_message(ui_config.message.err_dm_closed.description.text,
+                await interaction.response.send_message(messages_config.message.err_dm_closed.description.text,
                                                         ephemeral=True)
                 session_manager.remove(user.id)
                 return
@@ -92,11 +91,11 @@ async def setup_start_message(bot: commands.Bot):
 
         # Основное embed-сообщение
         embed = discord.Embed(
-            title=ui_config.message.initial.title.text,
-            description=ui_config.message.initial.description.text,
-            color=ui_config.message.initial.title.color
+            title=messages_config.message.initial.title.text,
+            description=messages_config.message.initial.description.text,
+            color=messages_config.message.initial.title.color
         )
-        embed.set_image(url=ui_config.message.initial.image.url)
+        embed.set_image(url=messages_config.message.initial.image.url)
 
         await channel.send(embed=embed, view=view)
 
@@ -107,7 +106,7 @@ async def handle_dm(message: discord.Message):
 
     session = session_manager.get(message.author.id)
     if not session or not session.active:
-        await message.channel.send(ui_config.message.err_inactive_session.description.text)
+        await message.channel.send(messages_config.message.err_inactive_session.description.text)
         return
 
     # Сбрасываем таймер, если пользователь активен
@@ -116,24 +115,24 @@ async def handle_dm(message: discord.Message):
         session.reset_timeout()
 
     if session.processing:
-        await message.channel.send(ui_config.message.err_pls_wait.description.text)
+        await message.channel.send(messages_config.message.err_pls_wait.description.text)
         return
 
     if message.attachments:
         file = message.attachments[0]
         if not file.filename.endswith(".txt"):
-            await message.channel.send(ui_config.message.err_wrong_format.description.text)
+            await message.channel.send(messages_config.message.err_wrong_format.description.text)
             return
         content = (await file.read()).decode("utf-8")
     else:
         content = message.content.strip()
 
     if not content:
-        await message.channel.send(ui_config.message.err_wrong_file_input.description.text)
+        await message.channel.send(messages_config.message.err_wrong_file_input.description.text)
         return
 
     session.processing = True
-    processing_msg = await message.channel.send(ui_config.message.check_started.description.text)
+    processing_msg = await message.channel.send(messages_config.message.check_started.description.text)
 
     try:
         session.add_user_message(content)
@@ -151,7 +150,7 @@ async def handle_dm(message: discord.Message):
 
     except Exception as e:
         logger.exception("Ошибка при проверке отчета")
-        await processing_msg.edit(content=f"{ui_config.message.err_exception.description.text} {e}")
+        await processing_msg.edit(content=f"{messages_config.message.err_exception.description.text} {e}")
     finally:
         session.processing = False
         if session.active and session.checks_remaining > 0:
@@ -163,4 +162,4 @@ async def handle_dm(message: discord.Message):
         if session.timeout_task and not session.timeout_task.done():
             session.timeout_task.cancel()
 
-        await message.channel.send(ui_config.message.err_limit_reached.description.text)
+        await message.channel.send(messages_config.message.err_limit_reached.description.text)
