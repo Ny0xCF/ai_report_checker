@@ -11,7 +11,7 @@ class SessionManager:
 
     async def create_session(self, user_id: int, dm_channel=None) -> UserSession | None:
         active_count = sum(1 for s in self.sessions.values() if s.active)
-        if active_count >= bot_config:
+        if active_count >= bot_config.session.max_active:
             return None
 
         session = UserSession(user_id=user_id, dm_channel=dm_channel)

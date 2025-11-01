@@ -72,7 +72,8 @@ class ReportView(discord.ui.View):
             await self.update_message(interaction)
 
     # ---------------- ЗАВЕРШЕНИЕ СЕССИИ ----------------
-    @discord.ui.button(label=messages_config.message.check_result.button.finish.label, style=discord.ButtonStyle.red,
+    @discord.ui.button(label=messages_config.message.check_result.button.finish.label,
+                       style=discord.ButtonStyle.primary,
                        custom_id="finish")
     async def finish_session(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self._end_session(interaction, manual=True)
