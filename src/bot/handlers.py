@@ -55,7 +55,8 @@ async def setup_start_message(bot: commands.Bot):
             # Проверяем, есть ли уже активная сессия
             existing_session = session_manager.get(user.id)
             if existing_session and existing_session.active:
-                await interaction.response.send_message(messages_config.message.err_already_started, ephemeral=True)
+                await interaction.response.send_message(messages_config.message.err_already_started.description.text,
+                                                        ephemeral=True)
                 return
 
             # Создаём новую сессию
