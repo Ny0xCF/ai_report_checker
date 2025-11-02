@@ -1,5 +1,4 @@
 import io
-from pathlib import Path
 
 import discord
 from discord.ext import commands
@@ -8,16 +7,15 @@ from src.bot.ai_client import AIClient
 from src.bot.sessions_manager import SessionManager
 from src.bot.views import ReportView
 from src.utils import logger
-from src.utils.config_loader import messages_config, bot_config
+from src.utils.config_loader import messages_config, bot_config, CONFIGS_BASE_DIR, PROMPTS_BASE_DIR
 
 logger = logger.get_logger("handlers")
 
 session_manager = SessionManager()
 
-base_dir = Path(__file__).resolve().parent.parent
 client = AIClient(
-    env_path=base_dir / ".env",
-    prompt_path=base_dir / "prompts/arrest_report.txt",
+    env_path=CONFIGS_BASE_DIR / ".env",
+    prompt_path=PROMPTS_BASE_DIR / "arrest_report.txt",
 )
 
 
