@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from Tools.scripts.generate_stdlib_module_names import SRC_DIR
 from dynaconf import Dynaconf
 
 # BASE_DIR = "src/configs"
