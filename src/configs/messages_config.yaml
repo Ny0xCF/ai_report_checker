@@ -15,7 +15,7 @@ message:
 
             ⬇️ Нажми на кнопку ниже, чтобы приступить к проверке или узнать как все это работает"
     image:
-      url: "https://i.ibb.co/MxKqyByh/Ai-Report-Helper.png"
+      url: "https://i.ibb.co/TqDR70rX/Helper.png"
     button:
       start:
         label: "Начать проверку"
