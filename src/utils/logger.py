@@ -1,11 +1,9 @@
 import logging
-import sys
 from logging.handlers import RotatingFileHandler
-from pathlib import Path
 
-from src.utils.config_loader import logger_config
+from src.utils.config_loader import logger_config, SRC_BASE_DIR
 
-LOG_DIR = Path(sys.path[0]).resolve().parent / "logs"
+LOG_DIR = (SRC_BASE_DIR / "logs")
 LOG_DIR.mkdir(exist_ok=True)
 
 logging.basicConfig(
