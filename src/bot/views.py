@@ -3,9 +3,9 @@ import logging
 
 import discord
 
-from src.bot import sessions
 from src.bot.ai_client import ReportCheckResult
 from src.bot.sessions import UserSession
+from src.utils.config_loader import messages_config
 
 logger = logging.getLogger("views")
 
@@ -33,12 +33,9 @@ class ReportView(discord.ui.View):
 
     def make_embed(self):
         embed = discord.Embed(
-            title="ℹ️ Бот находится в стадии разработки. "
-                  "Если ты столкнулся с неправильными или странными рекомендациями - "
-                  "напиши в ЛС <@337950212016439327>\n\n"
-                  "📋 Результат проверки отчета",
-            color=0x00b894,
-            description=f"Осталось проверок: **{self.session.checks_remaining}**"
+            title=messages_config.message.check_result.title.text,
+            color=messages_config.message.check_result.title.color,
+            description=f"{messages_config.message.check_result.description.text} **{self.session.checks_remaining}**"
         )
         start = self.page * self.page_size
         end = start + self.page_size
@@ -60,20 +57,24 @@ class ReportView(discord.ui.View):
             await interaction.edit_original_response(embed=self.make_embed(), view=new_view)
 
     # ---------------- НАВИГАЦИЯ ----------------
-    @discord.ui.button(label="⏮ Назад", style=discord.ButtonStyle.secondary, custom_id="prev")
+    @discord.ui.button(label=messages_config.message.check_result.button.nav_back.label,
+                       style=discord.ButtonStyle.secondary, custom_id="prev")
     async def prev_page(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.page > 0:
             self.page -= 1
             await self.update_message(interaction)
 
-    @discord.ui.button(label="⏭ Вперед", style=discord.ButtonStyle.secondary, custom_id="next")
+    @discord.ui.button(label=messages_config.message.check_result.button.nav_next.label,
+                       style=discord.ButtonStyle.secondary, custom_id="next")
     async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.page < self.total_pages - 1:
             self.page += 1
             await self.update_message(interaction)
 
     # ---------------- ЗАВЕРШЕНИЕ СЕССИИ ----------------
-    @discord.ui.button(label="🚫 Завершить сессию", style=discord.ButtonStyle.red, custom_id="finish")
+    @discord.ui.button(label=messages_config.message.check_result.button.finish.label,
+                       style=discord.ButtonStyle.primary,
+                       custom_id="finish")
     async def finish_session(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self._end_session(interaction, manual=True)
 
@@ -100,20 +101,17 @@ class ReportView(discord.ui.View):
 
         # Сообщение пользователю
         if manual:
-            await interaction.followup.send("✅ Сессия завершена вручную", ephemeral=True)
+            await interaction.followup.send(messages_config.message.session_closed_ok.description.text, ephemeral=True)
             logger.info(f"Сессия пользователя {interaction.user} завершена вручную")
         else:
             try:
-                await self.session.dm_channel.send(
-                    "⏰ Сессия завершена автоматически из-за простоя. "
-                    "Чтобы начать новую проверку, вернись в канал с интерфейсом бота и нажми на кнопку"
-                )
+                await self.session.dm_channel.send(messages_config.message.session_closed_by_timeout.description.text)
             except Exception:
                 logger.warning(f"Не удалось отправить сообщение о таймауте пользователю {self.session.user_id}")
 
     async def _session_timeout(self):
         try:
-            await asyncio.sleep(sessions.SESSION_TIMEOUT)
+            await asyncio.sleep(messages_config.session.timeout)
             if self.session.active and not self.session.processing:
                 # Только если сессия активна и сейчас нет проверки
                 await self._end_session(interaction=None, manual=False)

@@ -1,20 +1,17 @@
 import asyncio
-import os
 from dataclasses import dataclass, field
 from typing import Optional, List
 
 import discord
 
 from src.bot.ai_client import ReportCheckResult
-
-MAX_CHECKS = int(os.getenv("MAX_CHECKS", "5"))
-SESSION_TIMEOUT = int(os.getenv("SESSION_TIMEOUT", "600"))
+from src.utils.config_loader import bot_config
 
 
 @dataclass
 class UserSession:
     user_id: int
-    checks_remaining: int = MAX_CHECKS
+    checks_remaining: int = bot_config.bot.max_checks
     last_result: Optional[ReportCheckResult] = None
     active: bool = True
     processing: bool = False
@@ -46,7 +43,7 @@ class UserSession:
 
     async def _timeout_loop(self):
         try:
-            await asyncio.sleep(SESSION_TIMEOUT)
+            await asyncio.sleep(bot_config.session.timeout)
             # Ждём завершения текущей проверки
             while self.processing:
                 await asyncio.sleep(5)
@@ -72,8 +69,8 @@ class UserSession:
 
             if self.dm_channel:
                 await self.dm_channel.send(
-                    "⏰ Ваша сессия завершена автоматически из-за простоя. "
-                    "Чтобы начать новую проверку, вернитесь в канал с интерфейсом бота и нажмите кнопку."
+                    "⏰ Сессия завершена автоматически из-за простоя. "
+                    "Чтобы начать новую проверку, вернись в канал с интерфейсом бота и нажми кнопку"
                 )
         except asyncio.CancelledError:
             pass

@@ -1,10 +1,8 @@
 import asyncio
-import os
 from typing import Dict
 
 from src.bot.sessions import UserSession
-
-MAX_ACTIVE_SESSIONS = int(os.getenv("MAX_ACTIVE_SESSIONS"))
+from src.utils.config_loader import bot_config
 
 
 class SessionManager:
@@ -13,7 +11,7 @@ class SessionManager:
 
     async def create_session(self, user_id: int, dm_channel=None) -> UserSession | None:
         active_count = sum(1 for s in self.sessions.values() if s.active)
-        if active_count >= MAX_ACTIVE_SESSIONS:
+        if active_count >= bot_config.session.max_active:
             return None
 
         session = UserSession(user_id=user_id, dm_channel=dm_channel)
