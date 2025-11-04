@@ -79,7 +79,7 @@ class ReportView(discord.ui.View):
         await self._end_session(interaction, manual=True)
 
     # ---------------- ВНУТРЕННИЕ МЕТОДЫ ----------------
-    async def _end_session(self, interaction: discord.Interaction, manual=False):
+    async def _end_session(self, interaction: discord.Interaction | None, manual=False):
         if not self.session.active:
             return
 
@@ -94,26 +94,41 @@ class ReportView(discord.ui.View):
         new_view = discord.ui.View()
         for item in self.children:
             new_view.add_item(item)
-        try:
-            await interaction.response.edit_message(view=new_view)
-        except discord.errors.InteractionResponded:
-            await interaction.edit_original_response(view=new_view)
 
-        # Сообщение пользователю
-        if manual:
-            await interaction.followup.send(messages_config.message.session_closed_ok.description.text, ephemeral=True)
-            logger.info(f"Сессия пользователя {interaction.user} завершена вручную")
-        else:
+        # Обновляем сообщение, если interaction есть
+        if interaction is not None:
             try:
-                await self.session.dm_channel.send(messages_config.message.session_closed_by_timeout.description.text)
-            except Exception:
-                logger.warning(f"Не удалось отправить сообщение о таймауте пользователю {self.session.user_id}")
+                await interaction.response.edit_message(view=new_view)
+            except discord.errors.InteractionResponded:
+                await interaction.edit_original_response(view=new_view)
+
+        # Отправляем уведомление пользователю
+        try:
+            if manual:
+                if interaction is not None:
+                    await interaction.followup.send(
+                        messages_config.message.session_closed_ok.description.text,
+                        ephemeral=True
+                    )
+                else:
+                    await self.session.dm_channel.send(
+                        messages_config.message.session_closed_ok.description.text
+                    )
+                logger.info(f"Сессия пользователя {self.session.user_id} завершена вручную")
+            else:
+                await self.session.dm_channel.send(
+                    messages_config.message.session_closed_by_timeout.description.text
+                )
+                logger.info(f"Сессия пользователя {self.session.user_id} завершена по таймауту")
+        except Exception:
+            logger.warning(f"Не удалось отправить уведомление пользователю {self.session.user_id}")
 
     async def _session_timeout(self):
         try:
             await asyncio.sleep(bot_config.session.timeout)
+
+            # Сессия активна и не в процессе обработки
             if self.session.active and not self.session.processing:
-                # Только если сессия активна и сейчас нет проверки
                 await self._end_session(interaction=None, manual=False)
         except asyncio.CancelledError:
             return  # Таймер сброшен

@@ -5,7 +5,7 @@ from typing import Optional, List
 import discord
 
 from src.bot.ai_client import ReportCheckResult
-from src.utils.config_loader import bot_config
+from src.utils.config_loader import bot_config, messages_config
 
 
 @dataclass
@@ -69,8 +69,7 @@ class UserSession:
 
             if self.dm_channel:
                 await self.dm_channel.send(
-                    "⏰ Сессия завершена автоматически из-за простоя. "
-                    "Чтобы начать новую проверку, вернись в канал с интерфейсом бота и нажми кнопку"
+                    messages_config.message.session_closed_by_timeout.description.text
                 )
         except asyncio.CancelledError:
             pass
