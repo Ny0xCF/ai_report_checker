@@ -1,5 +1,5 @@
 bot:
-  start_channel: "mra-предпроверка-отчетов"
+  start_channel: "предпроверка-отчетов"
   max_checks: 10
 
 session:
