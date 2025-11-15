@@ -3,6 +3,11 @@ from logging.handlers import RotatingFileHandler
 
 from src.utils.config_loader import logger_config, SRC_BASE_DIR
 
+logging.getLogger("discord").setLevel(logging.WARNING)
+logging.getLogger("discord.client").setLevel(logging.WARNING)
+logging.getLogger("discord.gateway").setLevel(logging.WARNING)
+logging.getLogger("discord.http").setLevel(logging.WARNING)
+
 LOG_DIR = (SRC_BASE_DIR / "logs")
 LOG_DIR.mkdir(exist_ok=True)
 
