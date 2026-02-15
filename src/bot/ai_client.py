@@ -34,7 +34,7 @@ class AIClient:
             self,
             env_path: Path,
             prompt_path: Path,
-            model_name: str = "tngtech/deepseek-r1t2-chimera:free",
+            model_name: str = "z-ai/glm-4.5-air:free",
             max_concurrent: int = 10,
     ):
         # Загружаем токен
