@@ -1,7 +1,7 @@
 bot:
   start_channel: "предпроверка-отчетов"
-  max_checks: 10
+  max_checks: 3
 
 session:
-  max_active: 30
-  timeout: 600
+  max_active: 5
+  timeout: 300
