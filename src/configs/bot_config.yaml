@@ -4,4 +4,4 @@ bot:
 
 session:
   max_active: 5
-  timeout: 300
+  timeout: 280
